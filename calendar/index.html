@@ -39,6 +39,7 @@
   .tag.bill { background:#FDECEA; color:#C0392B; }
   .tag.pay { background:#E3F2EC; color:#1E7B6E; }
   .tag.date { background:#EEF3F8; color:#1F3A5F; }
+  .tag.habit { background:#F0EDF8; color:#56487F; }
   .msg { margin-top:10px; font-size:14px; }
   .err { color:#C0392B; }
   .ok { color:#1E7B6E; }
@@ -64,7 +65,7 @@
   <div class="card">
     <div class="step"><div class="num">1</div><div style="flex:1">
       <h2>Copy your calendar code</h2>
-      <p class="hint">In your GridNorthCo planner, find the <b>Calendar code</b> cell (Bills tab in the Paycheck planner, My Debts tab in the Debt Payoff planner, Dates &amp; Reminders tab in the Christmas planner) and copy it.</p>
+      <p class="hint">In your GridNorthCo planner, find the <b>Calendar code</b> cell (Bills tab in the Paycheck planner, My Debts tab in the Debt Payoff planner, Dates &amp; Reminders tab in the Christmas planner, Habits tab in the Habit Tracker) and copy it.</p>
     </div></div>
   </div>
   <div class="card">
@@ -81,6 +82,7 @@
       <label class="opt" id="optBills"><input type="checkbox" id="incBills" checked> Bills &amp; payments</label>
       <label class="opt" id="optPay"><input type="checkbox" id="incPay" checked> Paydays</label>
       <label class="opt" id="optEv"><input type="checkbox" id="incEv" checked> Dates &amp; deadlines</label>
+      <label class="opt" id="optHab"><input type="checkbox" id="incHab" checked> Habit reminders</label>
       <label class="opt">Reminder
         <select id="alarm">
           <option value="dayBefore" selected>Day before, 9:00 AM</option>
@@ -130,7 +132,7 @@
     if(!/^GNC1;\d{4};/.test(s)) throw new Error("That doesn't look like a GridNorthCo calendar code. It should start with GNC1;");
     const parts = s.split(";").filter(Boolean);
     const year = parseInt(parts[1],10);
-    const out = {year, bills:[], pay:null, events:[]};
+    const out = {year, bills:[], pay:null, events:[], habits:[]};
     for(const p of parts.slice(2)){
       const f = p.split(",");
       if(f[0]==="P"){
@@ -142,12 +144,16 @@
         const kind = (f[4]||"M").charAt(0)==="A" ? "A" : "M";
         const month = kind==="A" ? Math.min(12,Math.max(1,parseInt((f[4]||"").slice(1),10)||1)) : null;
         out.bills.push({name, day, amount: parseFloat(f[3])/100, kind, month, from: pd(f[5]), to: pd(f[6])});
+      } else if(f[0]==="H"){
+        const name=(f[1]||"").trim(); const [hh,mm]=(f[2]||"").split(":").map(Number); const mask=(f[3]||"1111111").padEnd(7,"0").slice(0,7);
+        const from=pd(f[4]);
+        if(name && isFinite(hh) && mask.includes("1")) out.habits.push({name, h:Math.min(23,Math.max(0,hh||0)), m:Math.min(59,Math.max(0,mm||0)), mask, from});
       } else if(f[0]==="E"){
         const name=(f[1]||"").trim(); const [ey,em,ed]=(f[2]||"").split("-").map(Number);
         if(name && ey && em && ed) out.events.push({name, date:new Date(ey,em-1,ed)});
       }
     }
-    if(!out.bills.length && !out.pay && !out.events.length) throw new Error("No bills, paydays or dates found in this code.");
+    if(!out.bills.length && !out.pay && !out.events.length && !out.habits.length) throw new Error("No bills, paydays, dates or habits found in this code.");
     return out;
   }
   function pd(t){ const [y,m,d]=(t||"").split("-").map(Number); return (y&&m&&d) ? new Date(y,m-1,d) : null; }
@@ -186,11 +192,23 @@
     if($("incEv").checked){
       for(const e of parsed.events) ev.push({tag:"date", title:e.name, start:e.date, rule:"", when:e.date.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})});
     }
+    if($("incHab").checked){
+      const DAYS=["SU","MO","TU","WE","TH","FR","SA"], DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      for(const h of parsed.habits){
+        const by=[], dn=[]; for(let i=0;i<7;i++) if(h.mask[i]==="1"){ by.push(DAYS[i]); dn.push(DN[i]); }
+        let st = h.from ? new Date(h.from) : new Date(y,0,1);
+        for(let k=0;k<7 && h.mask[st.getDay()]!=="1";k++) st.setDate(st.getDate()+1);
+        st.setHours(h.h,h.m,0,0);
+        const t = st.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+        ev.push({tag:"habit", title:h.name, start:st, timed:true, rule:"FREQ=WEEKLY;BYDAY="+by.join(","),
+                 when:(by.length===7?"Every day":by.length===5&&h.mask==="0111110"?"Weekdays":dn.join(" "))+" · "+t});
+      }
+    }
     return ev;
   }
   function render(){
     const ev = buildEvents();
-    $("list").innerHTML = ev.map(e => `<li><span><span class="tag ${e.tag}">${({bill:"DUE",pay:"PAY",date:"DATE"})[e.tag]}</span>${html(e.title)}</span><span class="when">${html(e.when)}</span></li>`).join("") || "<li>Nothing selected.</li>";
+    $("list").innerHTML = ev.map(e => `<li><span><span class="tag ${e.tag}">${({bill:"DUE",pay:"PAY",date:"DATE",habit:"HABIT"})[e.tag]}</span>${html(e.title)}</span><span class="when">${html(e.when)}</span></li>`).join("") || "<li>Nothing selected.</li>";
     $("openBtn").disabled = $("dlBtn").disabled = !ev.length;
   }
   function ics(){
@@ -199,11 +217,12 @@
     const trig = {dayBefore:"-PT15H", twoDays:"-P1DT15H", sameDay:"PT9H"}[$("alarm").value];
     const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//GridNorthCo//Planner Calendar//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:GridNorthCo Reminders"];
     ev.forEach((e,i)=>{
-      const end = new Date(e.start); end.setDate(end.getDate()+1);
+      const end = new Date(e.start); if(e.timed) end.setMinutes(end.getMinutes()+10); else end.setDate(end.getDate()+1);
+      const hm = d => pad(d.getHours())+pad(d.getMinutes())+"00";
       L.push("BEGIN:VEVENT","UID:gnc-"+parsed.year+"-"+i+"-"+Math.random().toString(36).slice(2,10)+"@gridnorthco","DTSTAMP:"+stamp,
-             "DTSTART;VALUE=DATE:"+ymd(e.start),"DTEND;VALUE=DATE:"+ymd(end),...(e.rule?["RRULE:"+e.rule+(e.until?";UNTIL="+e.until:until)]:[]),
-             "SUMMARY:"+esc(e.title),"DESCRIPTION:"+esc("From your GridNorthCo planner"),"TRANSP:TRANSPARENT");
-      if(trig) L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(e.title),"TRIGGER:"+trig,"END:VALARM");
+             ...(e.timed ? ["DTSTART:"+ymd(e.start)+"T"+hm(e.start),"DTEND:"+ymd(end)+"T"+hm(end)] : ["DTSTART;VALUE=DATE:"+ymd(e.start),"DTEND;VALUE=DATE:"+ymd(end)]),...(e.rule?["RRULE:"+e.rule+(e.until?";UNTIL="+e.until:until)]:[]),
+             "SUMMARY:"+esc(e.title),"DESCRIPTION:"+esc("From your GridNorthCo planner"),...(e.timed?[]:["TRANSP:TRANSPARENT"]));
+      if(trig) L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(e.title),"TRIGGER:"+(e.timed?"PT0M":trig),"END:VALARM");
       L.push("END:VEVENT");
     });
     L.push("END:VCALENDAR");
@@ -220,17 +239,17 @@
     try{
       parsed=parse(raw);
       $("parseMsg").className="msg ok";
-      const bits=[]; if(parsed.bills.length){ const w=parsed.bills.some(x=>x.to)?" payment":" bill"; bits.push(parsed.bills.length+w+(parsed.bills.length===1?"":"s")); } if(parsed.pay) bits.push("your paydays"); if(parsed.events.length) bits.push(parsed.events.length+" date"+(parsed.events.length===1?"":"s"));
+      const bits=[]; if(parsed.bills.length){ const w=parsed.bills.some(x=>x.to)?" payment":" bill"; bits.push(parsed.bills.length+w+(parsed.bills.length===1?"":"s")); } if(parsed.pay) bits.push("your paydays"); if(parsed.events.length) bits.push(parsed.events.length+" date"+(parsed.events.length===1?"":"s")); if(parsed.habits.length) bits.push(parsed.habits.length+" habit"+(parsed.habits.length===1?"":"s"));
       $("parseMsg").textContent="✔ Found "+bits.join(", ").replace(/, ([^,]*)$/," and $1")+".";
-      $("optBills").hidden=!parsed.bills.length; $("optPay").hidden=!parsed.pay; $("optEv").hidden=!parsed.events.length;
-      $("repeatRow").hidden=!(parsed.bills.some(b=>!b.to)||parsed.pay);
+      $("optBills").hidden=!parsed.bills.length; $("optPay").hidden=!parsed.pay; $("optEv").hidden=!parsed.events.length; $("optHab").hidden=!parsed.habits.length; const onlyHab=parsed.habits.length&&!parsed.bills.length&&!parsed.pay&&!parsed.events.length; const ao=$("alarm").options; ao[0].text=onlyHab?"At the habit's time":"Day before, 9:00 AM"; ao[1].text=onlyHab?"At the habit's time":"2 days before, 9:00 AM"; ao[2].text=onlyHab?"At the habit's time":"Same day, 9:00 AM"; for(const o of [ao[1],ao[2]]) o.hidden=!!onlyHab;
+      $("repeatRow").hidden=!(parsed.bills.some(b=>!b.to)||parsed.pay||parsed.habits.length);
       $("optsCard").hidden=$("addCard").hidden=false; render();
     }catch(e){
       parsed=null; $("parseMsg").className="msg err"; $("parseMsg").textContent=e.message; $("optsCard").hidden=$("addCard").hidden=true;
     }
   }
   $("code").addEventListener("input", onInput);
-  ["incBills","incPay","incEv","alarm","repeat"].forEach(id=>$(id).addEventListener("change", ()=>parsed&&render()));
+  ["incBills","incPay","incEv","incHab","alarm","repeat"].forEach(id=>$(id).addEventListener("change", ()=>parsed&&render()));
   $("pasteBtn").addEventListener("click", async ()=>{
     try{ $("code").value = await navigator.clipboard.readText(); onInput(); }
     catch(e){ $("parseMsg").className="msg err"; $("parseMsg").textContent="Your browser blocked clipboard access — long-press the box above and choose Paste."; }
