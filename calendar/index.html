@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add bills to your calendar · GridNorthCo</title>
+<meta name="description" content="Turn your GridNorthCo planner's bills and paydays into calendar reminders for iPhone, Mac, Outlook or Google Calendar. Nothing leaves your device.">
+<style>
+  :root { --navy:#1F3A5F; --teal:#2A9D8F; --gold:#E9C46A; --ink:#1E2733; --muted:#5B6676; --soft:#EEF3F8; --line:#DDE2E8; --bg:#F7F5F0; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); line-height:1.45; }
+  header { background:var(--navy); color:#fff; padding:22px 16px 26px; border-bottom:4px solid var(--gold); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 16px; }
+  header .brand { font-weight:800; letter-spacing:.06em; font-size:13px; color:var(--gold); }
+  header h1 { margin:6px 0 4px; font-size:26px; line-height:1.2; }
+  header p { margin:0; color:#C9D6E6; font-size:15px; }
+  main { padding:20px 0 40px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px; margin:16px 0; }
+  .step { display:flex; gap:12px; align-items:flex-start; }
+  .num { flex:0 0 28px; height:28px; border-radius:50%; background:var(--teal); color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  h2 { font-size:17px; margin:2px 0 6px; }
+  p.hint { margin:4px 0 0; color:var(--muted); font-size:14px; }
+  textarea { width:100%; min-height:92px; margin-top:10px; padding:12px; border:1.5px solid var(--line); border-radius:10px; font:14px/1.4 ui-monospace,Menlo,Consolas,monospace; resize:vertical; }
+  textarea:focus { outline:none; border-color:var(--teal); }
+  .row { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  button, .btn { appearance:none; border:0; border-radius:999px; padding:12px 18px; font-weight:700; font-size:15px; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+  .primary { background:var(--navy); color:#fff; }
+  .secondary { background:var(--soft); color:var(--navy); }
+  .gold { background:var(--gold); color:var(--navy); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  label.opt { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:8px 0; font-size:15px; }
+  .step > div:last-child { min-width:0; }
+  select { max-width:100%; padding:8px 10px; border-radius:8px; border:1.5px solid var(--line); font-size:15px; background:#fff; }
+  ul.events { list-style:none; padding:0; margin:10px 0 0; max-height:320px; overflow:auto; border-top:1px solid var(--line); }
+  ul.events li { display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; padding:9px 2px; border-bottom:1px solid var(--line); font-size:14px; }
+  ul.events li span.when { color:var(--muted); white-space:nowrap; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; margin-right:6px; vertical-align:1px; }
+  .tag.bill { background:#FDECEA; color:#C0392B; }
+  .tag.pay { background:#E3F2EC; color:#1E7B6E; }
+  .msg { margin-top:10px; font-size:14px; }
+  .err { color:#C0392B; }
+  .ok { color:#1E7B6E; }
+  .privacy { display:flex; gap:10px; align-items:flex-start; background:var(--soft); border-radius:12px; padding:12px 14px; font-size:14px; color:var(--muted); }
+  footer { text-align:center; color:var(--muted); font-size:13px; padding:10px 16px 30px; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#E7ECF2; --muted:#A8B3C1; --soft:#1C2836; --line:#2C3A4B; --bg:#0F1720; }
+    .card { background:#141E29; }
+    textarea, select { background:#0F1720; color:var(--ink); }
+    .secondary { color:#C9D6E6; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="brand">GRIDNORTHCO</div>
+    <h1>Add your bills to your calendar</h1>
+    <p>Get a reminder before every bill is due and every payday — on iPhone, Mac, Outlook or Google Calendar.</p>
+  </div>
+</header>
+<main class="wrap">
+  <div class="card">
+    <div class="step"><div class="num">1</div><div style="flex:1">
+      <h2>Copy your calendar code</h2>
+      <p class="hint">In your planner, open the <b>Bills</b> tab, scroll below your bill list and copy the cell next to <b>Calendar code</b>.</p>
+    </div></div>
+  </div>
+  <div class="card">
+    <div class="step"><div class="num">2</div><div style="flex:1">
+      <h2>Paste it here</h2>
+      <textarea id="code" placeholder="GNC1;2027;…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="row"><button class="secondary" id="pasteBtn" type="button">Paste from clipboard</button></div>
+      <div class="msg" id="parseMsg"></div>
+    </div></div>
+  </div>
+  <div class="card" id="optsCard" hidden>
+    <div class="step"><div class="num">3</div><div style="flex:1">
+      <h2>Choose what to add</h2>
+      <label class="opt"><input type="checkbox" id="incBills" checked> Bills</label>
+      <label class="opt"><input type="checkbox" id="incPay" checked> Paydays</label>
+      <label class="opt">Reminder
+        <select id="alarm">
+          <option value="dayBefore" selected>Day before, 9:00 AM</option>
+          <option value="twoDays">2 days before, 9:00 AM</option>
+          <option value="sameDay">Same day, 9:00 AM</option>
+          <option value="none">No reminder</option>
+        </select></label>
+      <label class="opt">Repeat
+        <select id="repeat">
+          <option value="year" selected>Through the end of the budget year</option>
+          <option value="forever">Keep repeating</option>
+        </select></label>
+      <ul class="events" id="list"></ul>
+    </div></div>
+  </div>
+  <div class="card" id="addCard" hidden>
+    <div class="step"><div class="num">4</div><div style="flex:1">
+      <h2>Add to your calendar</h2>
+      <div class="row">
+        <button class="primary" id="openBtn" type="button">Add to Apple Calendar</button>
+        <button class="gold" id="dlBtn" type="button">Download .ics file</button>
+      </div>
+      <p class="hint" id="howto">iPhone/iPad: tap <b>Add to Apple Calendar</b> in Safari, then <b>Add All</b>. Mac &amp; Outlook: download the .ics file and open it. Google Calendar: download the file, then on a computer go to Google Calendar › Settings › Import &amp; export › Import.</p>
+      <div class="msg" id="addMsg"></div>
+    </div></div>
+  </div>
+  <div class="privacy">
+    <div>🔒</div>
+    <div>Private by design: your code is read only inside this page, on your device. Nothing is uploaded or stored anywhere.</div>
+  </div>
+</main>
+<footer>GridNorthCo · Spreadsheet templates that do the math for you · <a href="https://www.etsy.com/shop/GridNorthCo" style="color:inherit">Etsy shop</a></footer>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let parsed = null;
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const pad = n => String(n).padStart(2,"0");
+  const ymd = d => d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  const money = v => isFinite(v) && v>0 ? " $" + Number(v).toLocaleString("en-US",{maximumFractionDigits:2}) : "";
+  const esc = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  const html = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+  // Code format (v1):  GNC1;<year>;P,<freq>,<yyyy-mm-dd>,<pay>;B,<name>,<day>,<amount>,<M|A><month>;B,...
+  function parse(raw){
+    const s = raw.trim().replace(/\s*;\s*/g,";");
+    if(!/^GNC1;\d{4};/.test(s)) throw new Error("That doesn't look like a GridNorthCo calendar code. It should start with GNC1;");
+    const parts = s.split(";").filter(Boolean);
+    const year = parseInt(parts[1],10);
+    const out = {year, bills:[], pay:null};
+    for(const p of parts.slice(2)){
+      const f = p.split(",");
+      if(f[0]==="P"){
+        const [y,m,d] = (f[2]||"").split("-").map(Number);
+        out.pay = {freq:f[1]||"", first: (y&&m&&d) ? new Date(y,m-1,d) : null, amount: parseFloat(f[3])};
+      } else if(f[0]==="B"){
+        const name = (f[1]||"").trim(); const day = Math.min(31,Math.max(1,parseInt(f[2],10)||1));
+        if(!name) continue;
+        const kind = (f[4]||"M").charAt(0)==="A" ? "A" : "M";
+        const month = kind==="A" ? Math.min(12,Math.max(1,parseInt((f[4]||"").slice(1),10)||1)) : null;
+        out.bills.push({name, day, amount: parseFloat(f[3]), kind, month});
+      }
+    }
+    if(!out.bills.length && !out.pay) throw new Error("No bills or paydays found in this code.");
+    return out;
+  }
+  function monthDayRule(day){
+    if(day<=28) return "BYMONTHDAY="+day;
+    const days=[]; for(let i=28;i<=day;i++) days.push(i);
+    return "BYMONTHDAY="+days.join(",")+";BYSETPOS=-1"; // that day, or the month's last day if shorter
+  }
+  function clampDate(y,m,d){ const last=new Date(y,m+1,0).getDate(); return new Date(y,m,Math.min(d,last)); }
+  function buildEvents(){
+    const ev=[]; const y=parsed.year;
+    if($("incBills").checked){
+      for(const b of parsed.bills){
+        if(b.kind==="M"){
+          ev.push({tag:"bill", title:b.name+" due"+money(b.amount), start:clampDate(y,0,b.day),
+                   rule:"FREQ=MONTHLY;"+monthDayRule(b.day), when:"Monthly · day "+b.day});
+        } else {
+          ev.push({tag:"bill", title:b.name+" due"+money(b.amount), start:clampDate(y,b.month-1,b.day),
+                   rule:"FREQ=YEARLY", when:"Yearly · "+MON[b.month-1]+" "+b.day});
+        }
+      }
+    }
+    if($("incPay").checked && parsed.pay){
+      const p=parsed.pay, t="Payday"+money(p.amount);
+      if(/semi/i.test(p.freq)){
+        ev.push({tag:"pay", title:t, start:new Date(y,0,15), rule:"FREQ=MONTHLY;BYMONTHDAY=15", when:"15th of each month"});
+        ev.push({tag:"pay", title:t, start:new Date(y,1,0), rule:"FREQ=MONTHLY;BYMONTHDAY=-1", when:"Last day of each month"});
+      } else if(p.first){
+        if(/bi/i.test(p.freq)) ev.push({tag:"pay", title:t, start:p.first, rule:"FREQ=WEEKLY;INTERVAL=2", when:"Every 2 weeks from "+MON[p.first.getMonth()]+" "+p.first.getDate()});
+        else if(/week/i.test(p.freq)) ev.push({tag:"pay", title:t, start:p.first, rule:"FREQ=WEEKLY", when:"Every week from "+MON[p.first.getMonth()]+" "+p.first.getDate()});
+        else ev.push({tag:"pay", title:t, start:p.first, rule:"FREQ=MONTHLY;"+monthDayRule(p.first.getDate()), when:"Monthly · day "+p.first.getDate()});
+      }
+    }
+    return ev;
+  }
+  function render(){
+    const ev = buildEvents();
+    $("list").innerHTML = ev.map(e => `<li><span><span class="tag ${e.tag}">${e.tag==="bill"?"BILL":"PAY"}</span>${html(e.title)}</span><span class="when">${html(e.when)}</span></li>`).join("") || "<li>Nothing selected.</li>";
+    $("openBtn").disabled = $("dlBtn").disabled = !ev.length;
+  }
+  function ics(){
+    const ev = buildEvents(); const stamp = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+    const until = $("repeat").value==="year" ? ";UNTIL="+parsed.year+"1231" : "";
+    const trig = {dayBefore:"-PT15H", twoDays:"-P1DT15H", sameDay:"PT9H"}[$("alarm").value];
+    const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//GridNorthCo//Planner Calendar//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Bills & Paydays"];
+    ev.forEach((e,i)=>{
+      const end = new Date(e.start); end.setDate(end.getDate()+1);
+      L.push("BEGIN:VEVENT","UID:gnc-"+parsed.year+"-"+i+"-"+Math.random().toString(36).slice(2,10)+"@gridnorthco","DTSTAMP:"+stamp,
+             "DTSTART;VALUE=DATE:"+ymd(e.start),"DTEND;VALUE=DATE:"+ymd(end),"RRULE:"+e.rule+until,
+             "SUMMARY:"+esc(e.title),"DESCRIPTION:"+esc("From your GridNorthCo planner"),"TRANSP:TRANSPARENT");
+      if(trig) L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+esc(e.title),"TRIGGER:"+trig,"END:VALARM");
+      L.push("END:VEVENT");
+    });
+    L.push("END:VCALENDAR");
+    return L.map(fold).join("\r\n")+"\r\n";
+  }
+  function fold(line){ // RFC 5545: max 75 octets per line
+    const out=[]; let cur=""; let bytes=0;
+    for(const ch of line){ const b=new TextEncoder().encode(ch).length; if(bytes+b>73){ out.push(cur); cur=" "; bytes=1; } cur+=ch; bytes+=b; }
+    out.push(cur); return out.join("\r\n");
+  }
+  function onInput(){
+    const raw=$("code").value; $("addMsg").textContent="";
+    if(!raw.trim()){ parsed=null; $("parseMsg").textContent=""; $("optsCard").hidden=$("addCard").hidden=true; return; }
+    try{
+      parsed=parse(raw);
+      $("parseMsg").className="msg ok";
+      $("parseMsg").textContent="✔ Found "+parsed.bills.length+" bill"+(parsed.bills.length===1?"":"s")+(parsed.pay?" and your paydays":"")+" for "+parsed.year+".";
+      $("optsCard").hidden=$("addCard").hidden=false; render();
+    }catch(e){
+      parsed=null; $("parseMsg").className="msg err"; $("parseMsg").textContent=e.message; $("optsCard").hidden=$("addCard").hidden=true;
+    }
+  }
+  $("code").addEventListener("input", onInput);
+  ["incBills","incPay","alarm","repeat"].forEach(id=>$(id).addEventListener("change", ()=>parsed&&render()));
+  $("pasteBtn").addEventListener("click", async ()=>{
+    try{ $("code").value = await navigator.clipboard.readText(); onInput(); }
+    catch(e){ $("parseMsg").className="msg err"; $("parseMsg").textContent="Your browser blocked clipboard access — long-press the box above and choose Paste."; }
+  });
+  const isApple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  $("openBtn").addEventListener("click", ()=>{
+    if(isApple){ location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics()); }
+    else { download(); }
+  });
+  function download(){
+    const blob=new Blob([ics()],{type:"text/calendar;charset=utf-8"}); const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="gridnorthco-bills-and-paydays.ics"; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},2000);
+    $("addMsg").className="msg ok"; $("addMsg").textContent="✔ File downloaded. Open it to add the events.";
+  }
+  $("dlBtn").addEventListener("click", download);
+  // optional: code passed in the URL fragment (#GNC1;...) never reaches any server
+  if(location.hash.length>5){ $("code").value=decodeURIComponent(location.hash.slice(1)); onInput(); }
+})();
+</script>
+</body>
+</html>
