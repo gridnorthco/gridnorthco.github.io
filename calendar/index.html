@@ -121,7 +121,7 @@
   const esc = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
   const html = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-  // Code format (v1):  GNC1;<year>;P,<freq>,<yyyy-mm-dd>,<pay>;B,<name>,<day>,<amount>,<M|A><month>;B,...
+  // Code format (v1):  GNC1;<year>;P,<freq>,<yyyy-m-d>,<pay cents>;B,<name>,<day>,<amount cents>,<M|A><month>;B,...
   function parse(raw){
     const s = raw.trim().replace(/\s*;\s*/g,";");
     if(!/^GNC1;\d{4};/.test(s)) throw new Error("That doesn't look like a GridNorthCo calendar code. It should start with GNC1;");
@@ -132,13 +132,13 @@
       const f = p.split(",");
       if(f[0]==="P"){
         const [y,m,d] = (f[2]||"").split("-").map(Number);
-        out.pay = {freq:f[1]||"", first: (y&&m&&d) ? new Date(y,m-1,d) : null, amount: parseFloat(f[3])};
+        out.pay = {freq:f[1]||"", first: (y&&m&&d) ? new Date(y,m-1,d) : null, amount: parseFloat(f[3])/100};
       } else if(f[0]==="B"){
         const name = (f[1]||"").trim(); const day = Math.min(31,Math.max(1,parseInt(f[2],10)||1));
         if(!name) continue;
         const kind = (f[4]||"M").charAt(0)==="A" ? "A" : "M";
         const month = kind==="A" ? Math.min(12,Math.max(1,parseInt((f[4]||"").slice(1),10)||1)) : null;
-        out.bills.push({name, day, amount: parseFloat(f[3]), kind, month});
+        out.bills.push({name, day, amount: parseFloat(f[3])/100, kind, month});
       }
     }
     if(!out.bills.length && !out.pay) throw new Error("No bills or paydays found in this code.");
