@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sleigh List</title>
+<meta name="description" content="A Christmas gift tracker that lives on your phone. Gifts, budgets and shopping lists. Private, offline, no account.">
+<meta name="theme-color" content="#0A1338">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sleigh List">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="art.js"></script>
+<style>
+@font-face{font-family:"Nunito";font-weight:400;font-display:swap;src:url(nunito-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:600;font-display:swap;src:url(nunito-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:700;font-display:swap;src:url(nunito-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Nunito";font-weight:800;font-display:swap;src:url(nunito-latin-800-normal.woff2) format("woff2")}
+:root{
+  --bg:#0A1338; --bg2:#101C4C; --card:#16245C; --card2:#1D2E6E; --ink:#F7F3EA; --muted:#A8B3D8; --line:rgba(255,255,255,.09);
+  --red:#E3394F; --gold:#F2B630; --green:#3FB27A; --blue:#7FA8F5; --snow:#FFFFFF;
+  --st-idea:#7F8CC0; --st-bought:#F2B630; --st-wrapped:#E3394F; --st-given:#3FB27A;
+  --r-lg:26px; --r-md:20px; --r-sm:14px; --shadow:0 12px 28px -16px rgba(0,0,0,.6);
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  --tabbar:rgba(8,14,44,.92); --input:#0F1A48; --chip:#1D2E6E;
+}
+:root[data-theme="story"]{
+  --bg:#FBF3E6; --bg2:#F6E9D5; --card:#FFFFFF; --card2:#FFF8EE; --ink:#3A2A22; --muted:#8E7B6E; --line:#EFE2D0;
+  --red:#C8102E; --gold:#D99A16; --green:#1F7A4D; --blue:#4F7CC4;
+  --st-idea:#B9A797; --st-bought:#E0A526; --st-wrapped:#C8102E; --st-given:#1F7A4D;
+  --shadow:0 1px 0 rgba(58,42,34,.04),0 12px 26px -16px rgba(120,70,40,.35);
+  --tabbar:rgba(58,34,26,.94); --input:#FFFFFF; --chip:#FFFFFF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Nunito",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45}
+body{min-height:100vh;min-height:100dvh;overscroll-behavior-y:none}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:10px}
+[hidden]{display:none!important}
+.app{max-width:480px;margin:0 auto;padding:0 18px calc(110px + var(--safe-b));min-height:100dvh}
+.pt{padding-top:calc(20px + var(--safe-t))}
+h1{font-size:28px;line-height:1.15;font-weight:800;margin:0;letter-spacing:-.01em}
+h2{font-size:19px;font-weight:800;margin:0}
+.sub{color:var(--muted);font-weight:600;font-size:15px}
+.card{background:var(--card);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow)}
+.stack>*+*{margin-top:14px}
+.row{display:flex;align-items:center;gap:12px}
+.spacer{flex:1;min-width:0}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 22px;border-radius:999px;font-weight:800;background:var(--red);color:#fff}
+.btn.gold{background:var(--gold);color:#2A1E05}
+.btn.ghost{background:var(--card2);color:var(--ink)}
+.btn.block{width:100%}
+.btn.sm{min-height:38px;padding:0 14px;font-size:14px}
+.input,textarea,select.input{width:100%;border:2px solid var(--line);background:var(--input);border-radius:var(--r-sm);padding:13px 14px;font-weight:600;outline:none;color:var(--ink)}
+.input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
+.input:focus,textarea:focus{border-color:var(--gold)}
+textarea{resize:none;min-height:70px;line-height:1.4}
+label.lbl,.lbl{display:block;font-weight:800;font-size:14px;margin:0 0 6px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.two .input{min-width:0;-webkit-appearance:none;appearance:none;min-height:52px}
+.money{font-variant-numeric:tabular-nums}
+
+/* hero */
+.hero{position:relative;margin:0 -18px 16px;height:calc(310px + var(--safe-t));overflow:hidden;border-radius:0 0 34px 34px;box-shadow:var(--shadow)}
+.hero svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero .count{position:absolute;left:22px;top:calc(20px + var(--safe-t));color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+:root[data-theme="story"] .hero .count{color:var(--ink);text-shadow:none}
+.hero .count strong{display:block;font-size:64px;line-height:.95;font-weight:800;letter-spacing:-.02em}
+.hero .count span{font-weight:800;font-size:16px;opacity:.92}
+.hero .count small{display:block;font-weight:700;font-size:13px;opacity:.75;margin-top:2px}
+.hero .peek{position:absolute;right:16px;top:calc(16px + var(--safe-t));background:rgba(255,255,255,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;border-radius:999px;padding:8px 12px;font-weight:800;font-size:13px}
+:root[data-theme="story"] .hero .peek{background:rgba(58,42,34,.1);color:var(--ink)}
+
+/* budget */
+.budget{display:flex;gap:16px;align-items:center}
+.ringwrap{position:relative;width:96px;height:96px;flex:none}
+.ringwrap svg{width:96px;height:96px}
+.ringwrap b{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;font-weight:800}
+.big{font-size:26px;font-weight:800;line-height:1.1}
+.over{color:var(--red)}
+
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pipe button{background:var(--card2);border-radius:18px;padding:12px 6px 10px;text-align:center}
+.pipe strong{display:block;font-size:24px;font-weight:800;line-height:1.1}
+.pipe span{font-size:12px;font-weight:800;color:var(--muted)}
+.pipe i{display:block;width:22px;height:5px;border-radius:5px;margin:7px auto 0}
+.bar{height:12px;border-radius:12px;background:var(--card2);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+
+/* lists */
+.people{display:flex;flex-direction:column;gap:10px}
+.person{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:var(--r-md);padding:12px 14px;box-shadow:var(--shadow);width:100%;text-align:left}
+.av{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:26px;flex:none;background:var(--card2)}
+.person .name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .meta{font-size:13px;font-weight:700;color:var(--muted)}
+.dots{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%}
+.amt{text-align:right;font-weight:800;white-space:nowrap}
+.amt small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.gifts{display:flex;flex-direction:column;gap:8px}
+.gift{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:18px;padding:11px 12px;box-shadow:var(--shadow)}
+.gift .t{flex:1;min-width:0}
+.gift .title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gift .meta{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{flex:none;border-radius:999px;padding:7px 11px;font-weight:800;font-size:12.5px;color:#fff;min-width:78px;text-align:center}
+.st.idea{background:var(--st-idea)}.st.bought{background:var(--st-bought);color:#2A1E05}.st.wrapped{background:var(--st-wrapped)}.st.given{background:var(--st-given)}
+.st.pop{animation:pop .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pop{40%{transform:scale(1.2) rotate(-4deg)}100%{transform:scale(1)}}
+.empty{text-align:center;padding:10px 6px 4px}
+.empty svg{width:140px;height:160px}
+.empty p{color:var(--muted);font-weight:700;margin:6px 0 14px}
+.add-row{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--line);border-radius:var(--r-md);padding:15px;font-weight:800;color:var(--muted);width:100%}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:9px 14px;border-radius:999px;background:var(--chip);box-shadow:var(--shadow);font-weight:800;font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--gold);color:#2A1E05}
+.group-h{font-weight:800;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:18px 4px 8px}
+.up{display:flex;gap:12px;align-items:center;padding:10px 0}
+.up+.up{border-top:2px solid var(--line)}
+.up .d{width:46px;flex:none;text-align:center;background:var(--card2);border-radius:12px;padding:5px 0;font-weight:800;line-height:1.1}
+.up .d small{display:block;font-size:11px;color:var(--muted)}
+.up .d b{font-size:18px}
+.peeking .secret{filter:blur(7px);user-select:none}
+
+/* tab bar */
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + var(--safe-b));width:min(452px,calc(100% - 24px));display:grid;grid-template-columns:repeat(4,1fr);background:var(--tabbar);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:26px;padding:8px;z-index:20;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;border-radius:18px;color:#AFB6D3;font-weight:700;font-size:12px}
+:root[data-theme="story"] .tab{color:#D8C6B6}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{background:rgba(255,255,255,.13);color:#fff}
+.fab{position:fixed;right:max(18px,calc(50% - 222px));bottom:calc(92px + var(--safe-b));width:60px;height:60px;border-radius:50%;background:var(--red);color:#fff;font-size:32px;font-weight:800;display:grid;place-items:center;box-shadow:0 14px 26px -10px rgba(227,57,79,.7);z-index:19}
+
+/* settings */
+.list{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;width:100%;padding:16px 18px;text-align:left;font-weight:700}
+.item+.item{border-top:2px solid var(--line)}
+.item .ic{width:36px;height:36px;border-radius:12px;background:var(--card2);display:grid;place-items:center;font-size:18px;flex:none}
+.item small{display:block;color:var(--muted);font-weight:600;font-size:13px}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.themes button{border-radius:18px;overflow:hidden;box-shadow:var(--shadow);text-align:left;background:var(--card2)}
+.themes button svg{display:block;width:100%;height:96px}
+.themes button span{display:block;padding:8px 12px;font-weight:800}
+.themes button[aria-pressed="true"]{outline:3px solid var(--gold);outline-offset:2px}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(3,6,24,.55);z-index:40;opacity:0;transition:opacity .25s}
+.scrim.show{opacity:1}
+.sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%,100%);width:min(480px,100%);max-height:92dvh;overflow:auto;background:var(--bg2);border-radius:28px 28px 0 0;padding:10px 20px calc(24px + var(--safe-b));z-index:41;transition:transform .32s cubic-bezier(.2,.9,.3,1)}
+.sheet.show{transform:translate(-50%,0)}
+.grab{width:44px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 14px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--card2);border-radius:16px;padding:4px;gap:2px}
+.seg button{padding:10px 2px;border-radius:12px;font-weight:800;font-size:13.5px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.emojis{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.emojis button{font-size:24px;padding:6px 0;border-radius:12px}
+.emojis button[aria-pressed="true"]{background:var(--card);box-shadow:var(--shadow)}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{padding:9px 13px;border-radius:999px;background:var(--card);box-shadow:var(--shadow);font-weight:800;font-size:14px}
+.pick button[aria-pressed="true"]{background:var(--gold);color:#2A1E05}
+.toggle{display:flex;align-items:center;gap:12px;font-weight:800}
+.toggle input{width:22px;height:22px;accent-color:var(--red)}
+
+/* welcome */
+.welcome{min-height:100dvh;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:28px}
+.welcome .art{position:fixed;inset:0;z-index:-1}
+.welcome .art svg{width:100%;height:100%}
+.welcome .panel{background:var(--bg2);border-radius:28px;padding:22px 20px;box-shadow:var(--shadow)}
+.welcome h1{font-size:32px}
+.welcome p{color:var(--muted);font-weight:600;font-size:16px;margin:8px 0 18px}
+.err{color:var(--red);font-weight:700;font-size:14px;min-height:20px;margin-top:8px}
+.banner{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:var(--r-md);padding:12px 14px;box-shadow:var(--shadow)}
+.banner b{display:block}
+.banner small{color:var(--muted);font-weight:600}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:9px 0;font-weight:700}
+.steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;flex:none;font-weight:800}
+.toast{position:fixed;left:50%;bottom:calc(100px + var(--safe-b));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:800;opacity:0;transition:all .25s;z-index:60;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.runner{position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden}
+.runner svg{position:absolute;width:300px;left:-320px;top:40%;animation:run 3.4s cubic-bezier(.45,.1,.55,.9) forwards}
+@keyframes run{0%{transform:translate(0,120px) rotate(-6deg)}100%{transform:translate(calc(100vw + 360px),-260px) rotate(-12deg)}}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:56}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="app" id="app" aria-live="polite"></main>
+<button class="fab" id="fab" hidden aria-label="Add a gift" data-act="newGift">+</button>
+<nav class="tabs" id="tabs" hidden aria-label="Main">
+  <button class="tab" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>Home</button>
+  <button class="tab" data-tab="people"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M12 9v12M3 13h18"/><path d="M12 9c-2-4-6-4-6-1.5S10 9 12 9zm0 0c2-4 6-4 6-1.5S14 9 12 9z"/></svg>Gifts</button>
+  <button class="tab" data-tab="shop"><svg viewBox="0 0 24 24"><path d="M5 7h14l-1.2 12.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg>To-do</button>
+  <button class="tab" data-tab="settings"><svg viewBox="0 0 24 24"><path d="M12 2v20M4 6.5l16 11M20 6.5l-16 11"/><path d="m9 3.5 3 2 3-2M9 20.5l3-2 3 2M2.5 9.5l3.5.6-1 3.4M21.5 14.5l-3.5-.6 1-3.4"/></svg>Settings</button>
+</nav>
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="sheet" role="dialog" aria-modal="true" hidden><div class="grab"></div><div id="sheetBody"></div></section>
+<div class="toast" id="toast" role="status"></div>
+<div class="runner" id="runner"></div>
+<canvas id="fx"></canvas>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<script>
+"use strict";
+(() => {
+const KEY = "sleigh-list-v1";
+const CODE_HASH = "dc6863aea00d77d9fcca94681690681224fcbaf9f1d8786634a7ff8014fb6b72";
+const STATUS = [["idea","Idea"],["bought","Bought"],["wrapped","Wrapped"],["given","Given"]];
+const SN = Object.fromEntries(STATUS);
+const EMOJIS = ["👩","👨","👧","👦","👶","👵","👴","💑","🧑","👱‍♀️","🧔","👩‍🦰","🐶","🐱","🎅","🤶","⛄","🦌","🎄","⭐","❤️","🎓","💼","🏠"];
+const STARTERS = [["👩","Mom"],["👨","Dad"],["💑","Partner"],["👧","Daughter"],["👦","Son"],["👵","Grandma"],["👴","Grandpa"],["👩‍🦰","Sister"],["🧔","Brother"],["⭐","Best friend"],["🎓","Teacher"],["💼","Coworker"],["🐶","The dog"]];
+const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const pad = n => String(n).padStart(2,"0");
+const dkey = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const fromKey = k => { const [y,m,d] = k.split("-").map(Number); return new Date(y,m-1,d); };
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2,9);
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(12); } catch(e){} };
+const money = n => "$" + (Math.round((+n||0)*100)/100).toLocaleString("en-US",{minimumFractionDigits:(+n%1?2:0),maximumFractionDigits:2});
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- state ---------- */
+const blank = () => ({v:1, unlocked:false, onboarded:false, name:"", theme:"night", budget:0, people:[], gifts:[], season:xmasDate().getFullYear()});
+function xmasDate(){ const t = today(); let x = new Date(t.getFullYear(),11,25); if(t > new Date(t.getFullYear(),11,26)) x = new Date(t.getFullYear()+1,11,25); return x; }
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch(e) { S = blank(); }
+let memOnly = false, peeking = false;
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){ if(!memOnly){ memOnly = true; toast("Storage is blocked — changes won't be kept"); } } }
+let view = "home", shopTab = "buy", openPerson = null;
+applyTheme();
+function applyTheme(){ document.documentElement.dataset.theme = S.theme; document.querySelector('meta[name="theme-color"]').content = S.theme === "story" ? "#FBF1E1" : "#0A1338"; }
+document.head.insertAdjacentHTML("beforeend", "<style>" + XMAS.CSS + "</style>");
+
+/* ---------- logic ---------- */
+const giftsOf = p => S.gifts.filter(g => g.personId === p.id);
+const spentOn = list => list.filter(g => g.status !== "idea").reduce((s,g) => s + (+g.price||0), 0);
+const plannedOn = list => list.reduce((s,g) => s + (+g.price||0), 0);
+const totalBudget = () => S.budget || S.people.reduce((s,p) => s + (+p.budget||0), 0);
+const daysTo = () => Math.round((xmasDate() - today())/864e5);
+const person = id => S.people.find(p => p.id === id);
+function countBy(){ const c = {idea:0,bought:0,wrapped:0,given:0}; S.gifts.forEach(g => c[g.status]++); return c; }
+function fmtDate(k){ if(!k) return ""; const d = fromKey(k); return MN[d.getMonth()] + " " + d.getDate(); }
+function rel(k){ const n = Math.round((fromKey(k) - today())/864e5); return n === 0 ? "today" : n === 1 ? "tomorrow" : n < 0 ? (-n) + " day" + (n===-1?"":"s") + " ago" : "in " + n + " days"; }
+
+/* ---------- ui helpers ---------- */
+function toast(t){ const el = $("#toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2200); }
+function ring(p, over){
+  const size = 96, w = 10, r = (size-w)/2, c = 2*Math.PI*r, q = Math.min(1, p);
+  return `<svg viewBox="0 0 ${size} ${size}"><circle cx="48" cy="48" r="${r}" stroke="var(--card2)" stroke-width="${w}" fill="none"/>${q>0?`<circle cx="48" cy="48" r="${r}" stroke="${over?"var(--red)":"var(--green)"}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-dasharray="${c*q} ${c}" transform="rotate(-90 48 48)"/>`:""}</svg>`;
+}
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+let deferredPrompt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredPrompt = e; if(view === "settings" || view === "home") render(); });
+
+/* ---------- snow ---------- */
+let snowRAF = 0;
+function startSnow(canvas, n){
+  cancelAnimationFrame(snowRAF);
+  if(!canvas || reduced()) return;
+  const x = canvas.getContext("2d"), dpr = Math.min(2, devicePixelRatio || 1);
+  const W = canvas.clientWidth, H = canvas.clientHeight; canvas.width = W*dpr; canvas.height = H*dpr; x.scale(dpr,dpr);
+  const col = S.theme === "story" ? "rgba(170,190,215," : "rgba(255,255,255,";
+  const fl = Array.from({length:n}, () => ({x:Math.random()*W, y:Math.random()*H, r:Math.random()*2.4+.8, s:Math.random()*.6+.3, w:Math.random()*Math.PI*2}));
+  (function tick(){
+    if(!canvas.isConnected) return;
+    x.clearRect(0,0,W,H);
+    for(const f of fl){ f.y += f.s; f.w += .02; f.x += Math.sin(f.w)*.35; if(f.y > H+4){ f.y = -4; f.x = Math.random()*W; }
+      x.fillStyle = col + (.45 + f.r/6) + ")"; x.beginPath(); x.arc(f.x, f.y, f.r, 0, Math.PI*2); x.fill(); }
+    snowRAF = requestAnimationFrame(tick);
+  })();
+}
+function sleighRun(){
+  if(reduced()) return;
+  const r = $("#runner"); r.innerHTML = `<svg viewBox="-10 -30 280 80">${XMAS.sleighTeam(XMAS.PAL[S.theme])}<g fill="${XMAS.PAL[S.theme].gold}">${Array.from({length:14},(_,i)=>`<circle cx="${-10 - i*14}" cy="${36 + Math.sin(i)*6}" r="${2.6 - i*.16}" opacity="${1 - i/14}"/>`).join("")}</g></svg>`;
+  clearTimeout(sleighRun.t); sleighRun.t = setTimeout(() => r.innerHTML = "", 3600);
+}
+function sparkle(){
+  if(reduced()) return;
+  const c = $("#fx"), x = c.getContext("2d"), dpr = devicePixelRatio || 1;
+  c.width = innerWidth*dpr; c.height = innerHeight*dpr; x.setTransform(dpr,0,0,dpr,0,0);
+  const cols = ["#FFFFFF","#F2B630","#E3394F","#3FB27A"];
+  const parts = Array.from({length:60}, () => ({x:innerWidth/2, y:innerHeight*.35, vx:(Math.random()-.5)*9, vy:-Math.random()*9-2, r:Math.random()*4+3, a:Math.random()*6, col:cols[Math.floor(Math.random()*4)]}));
+  let f = 0;
+  (function tick(){
+    x.clearRect(0,0,innerWidth,innerHeight);
+    for(const p of parts){ p.vy += .25; p.x += p.vx; p.y += p.vy; p.a += .1;
+      x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.strokeStyle = p.col; x.lineWidth = 2; x.beginPath();
+      for(let i=0;i<3;i++){ x.rotate(Math.PI/3); x.moveTo(-p.r,0); x.lineTo(p.r,0); } x.stroke(); x.restore(); }
+    if(++f < 100) requestAnimationFrame(tick); else x.clearRect(0,0,innerWidth,innerHeight);
+  })();
+}
+
+/* ---------- views ---------- */
+function render(){
+  const inApp = S.unlocked && S.onboarded;
+  $("#tabs").hidden = !inApp;
+  $("#fab").hidden = !inApp || view === "settings" || !S.people.length;
+  document.body.classList.toggle("peeking", peeking);
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-current", b.dataset.tab === view ? "page" : "false"));
+  if(!S.unlocked) return renderUnlock();
+  if(!S.onboarded) return renderOnboard();
+  ({home:renderHome, people:renderPeople, shop:renderShop, settings:renderSettings})[view]();
+}
+function installBanner(){
+  if(standalone) return "";
+  if(isIOS) return `<div class="banner"><div class="spacer"><b>Put Sleigh List on your Home Screen</b><small>It opens like an app and works offline.</small></div><button class="btn sm" data-act="install-ios">How</button></div>`;
+  if(deferredPrompt) return `<div class="banner"><div class="spacer"><b>Install Sleigh List</b><small>Opens like an app and works offline.</small></div><button class="btn sm" data-act="install">Install</button></div>`;
+  return "";
+}
+function renderUnlock(){
+  app.innerHTML = `<div class="welcome"><div class="art">${XMAS.scene(S.theme,{id:"w", h:640, moonY:150, moonX:290, snowman:false, gifts:false})}</div>
+    <div class="panel stack">
+      ${isIOS && !standalone ? installBanner() : ""}
+      <div><h1>Sleigh List</h1><p style="margin-bottom:0">Every gift, every budget, all in one cozy place. Your list stays on this phone — no account, no ads.</p></div>
+      <div><label class="lbl" for="code">Your unlock code</label>
+      <input class="input" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="From your Start Here PDF">
+      <div class="err" id="codeErr"></div></div>
+      <button class="btn block" data-act="unlock">Unlock</button>
+    </div></div>`;
+}
+let starterSel = new Set([0,1,3,4]);
+function renderOnboard(){
+  app.innerHTML = `<div class="pt stack">
+    <div><h1>Who's on your list? 🎁</h1><p class="sub" style="margin:6px 0 0">Pick a few to start. You can rename, add or remove people any time.</p></div>
+    <div><span class="lbl">Pick your look</span><div class="themes">
+      <button data-act="theme" data-v="night" aria-pressed="${S.theme==="night"}">${XMAS.scene("night",{id:"on", h:300, snowman:false, gifts:false, noSleigh:true})}<span>Snowy night</span></button>
+      <button data-act="theme" data-v="story" aria-pressed="${S.theme==="story"}">${XMAS.scene("story",{id:"os", h:300, snowman:false, gifts:false, noSleigh:true})}<span>Storybook</span></button>
+    </div></div>
+    <div><label class="lbl" for="nm">Your first name</label><input class="input" id="nm" value="${esc(S.name)}" placeholder="So we can say hi"></div>
+    <div class="pick">${STARTERS.map(([e,t],i) => `<button aria-pressed="${starterSel.has(i)}" data-act="starter" data-i="${i}">${e} ${t}</button>`).join("")}</div>
+    <div><label class="lbl" for="bd">Total Christmas budget (optional)</label><input class="input money" id="bd" inputmode="decimal" placeholder="$ e.g. 800" value="${S.budget||""}"></div>
+    <button class="btn block" data-act="start">Start my list with ${starterSel.size} ${starterSel.size===1?"person":"people"}</button>
+  </div>`;
+}
+function renderHome(){
+  const c = countBy(), n = S.gifts.length, tb = totalBudget(), sp = spentOn(S.gifts), pl = plannedOn(S.gifts);
+  const d = daysTo();
+  const covered = S.people.filter(p => giftsOf(p).some(g => g.status !== "idea")).length;
+  const ups = [];
+  S.gifts.forEach(g => {
+    if(g.orderBy && g.status === "idea") ups.push({k:g.orderBy, txt:"Order by", g});
+    if(g.arrives && g.status === "bought" && g.arrives >= dkey(today())) ups.push({k:g.arrives, txt:"Arrives", g});
+  });
+  ups.sort((a,b) => a.k < b.k ? -1 : 1);
+  const greet = S.name ? `Hi ${esc(S.name)} · ` : "";
+  app.innerHTML = `<div class="hero">${XMAS.scene(S.theme,{id:"h", h:310})}<canvas id="snow"></canvas>
+      <div class="count">${d === 0 ? `<strong>🎄</strong><span>Merry Christmas!</span>` : `<strong>${d}</strong><span>${d===1?"sleep":"sleeps"} until Christmas</span>`}<small>${greet}${xmasDate().toLocaleDateString("en-US",{weekday:"long", month:"long", day:"numeric"})}</small></div>
+      <button class="peek" data-act="peek" aria-pressed="${peeking}">${peeking ? "🙈 Hidden" : "👀 Peek shield"}</button>
+    </div>
+    <div class="stack">
+      ${installBanner()}
+      <div class="card budget">
+        <div class="ringwrap">${ring(tb ? sp/tb : 0, tb && sp > tb)}<b>${tb ? Math.round(sp/tb*100)+"%" : "–"}</b></div>
+        <div class="spacer">
+          <div class="sub">Spent so far</div>
+          <div class="big money ${tb && sp > tb ? "over" : ""}">${money(sp)}</div>
+          <div class="sub money">${tb ? (sp > tb ? money(sp-tb)+" over your "+money(tb)+" budget" : money(tb-sp)+" left of "+money(tb)) : `<button class="link" data-act="tab" data-v="settings" style="color:var(--gold);font-weight:800">Set a budget</button>`}</div>
+          ${pl > sp ? `<div class="sub money" style="font-size:13px">${money(pl)} if you buy every idea</div>` : ""}
+        </div>
+      </div>
+      <div class="card stack">
+        <div class="row"><h2 class="spacer">Your gifts</h2><span class="sub">${covered} of ${S.people.length} people sorted</span></div>
+        <div class="pipe">${STATUS.map(([k,l]) => `<button data-act="pipe" data-v="${k}"><strong>${c[k]}</strong><span>${l}</span><i style="background:var(--st-${k})"></i></button>`).join("")}</div>
+        <div class="bar">${n ? STATUS.map(([k]) => `<i style="width:${c[k]/n*100}%;background:var(--st-${k})"></i>`).join("") : ""}</div>
+      </div>
+      ${ups.length ? `<div class="card"><h2 style="margin-bottom:4px">Coming up</h2>${ups.slice(0,5).map(u => { const dd = fromKey(u.k), p = person(u.g.personId); return `<div class="up"><div class="d"><small>${MN[dd.getMonth()]}</small><b>${dd.getDate()}</b></div><div class="spacer"><b class="secret">${esc(u.txt)}: ${esc(u.g.title)}</b><div class="sub" style="font-size:13px">${p?esc(p.emoji+" "+p.name)+" · ":""}${rel(u.k)}</div></div></div>`; }).join("")}</div>` : ""}
+      ${!n ? `<div class="card empty"><svg viewBox="0 -14 100 160">${XMAS.snowman(XMAS.PAL[S.theme])}</svg><p>No gifts yet. Add your first idea —<br>even a hunch counts.</p><button class="btn" data-act="newGift">+ Add a gift idea</button></div>` : ""}
+    </div>`;
+  startSnow($("#snow"), 70);
+}
+function personRow(p){
+  const gs = giftsOf(p), sp = spentOn(gs), b = +p.budget || 0;
+  return `<button class="person" data-act="openPerson" data-id="${p.id}"><div class="av">${p.emoji}</div><div class="spacer"><div class="name">${esc(p.name)}</div>
+    <div class="meta">${gs.length ? gs.length + " gift" + (gs.length>1?"s":"") : "No gifts yet"}</div>
+    <div class="dots">${gs.map(g => `<i style="background:var(--st-${g.status})"></i>`).join("")}</div></div>
+    <div class="amt money ${b && sp > b ? "over" : ""}">${money(sp)}<small>${b ? "of " + money(b) : "no budget"}</small></div></button>`;
+}
+function renderPeople(){
+  app.innerHTML = `<div class="pt stack"><div class="row"><div class="spacer"><div class="sub">Sleigh List</div><h1>Gifts by person</h1></div><button class="btn ghost sm" data-act="peek">${peeking ? "🙈" : "👀"}</button></div>
+    <div class="people">${S.people.map(personRow).join("")}</div>
+    <button class="add-row" data-act="newPerson">+ Add someone</button></div>`;
+  if(openPerson) personSheet(person(openPerson));
+}
+function giftRow(g, showPerson){
+  const p = person(g.personId);
+  const bits = [showPerson && p ? p.emoji + " " + p.name : "", g.price ? money(g.price) : "", g.store, g.hidden ? "📍 " + g.hidden : "", g.stocking ? "🧦 stocking" : ""].filter(Boolean);
+  return `<div class="gift"><button class="t" style="text-align:left" data-act="editGift" data-id="${g.id}"><div class="title secret">${esc(g.title)}</div><div class="meta">${esc(bits.join(" · ")) || "Tap to add details"}</div></button>
+    <button class="st ${g.status}" data-act="cycle" data-id="${g.id}" aria-label="Status: ${SN[g.status]}. Tap to move on">${SN[g.status]}</button></div>`;
+}
+function renderShop(){
+  const tabs = [["buy","To buy"],["coming","On the way"],["wrap","To wrap"],["stock","Stockings"],["done","Done"]];
+  const t = dkey(today());
+  const lists = {
+    buy: S.gifts.filter(g => g.status === "idea"),
+    coming: S.gifts.filter(g => g.status === "bought" && g.arrives && g.arrives >= t),
+    wrap: S.gifts.filter(g => g.status === "bought" && !(g.arrives && g.arrives > t)),
+    stock: S.gifts.filter(g => g.stocking),
+    done: S.gifts.filter(g => g.status === "wrapped" || g.status === "given")
+  };
+  const L = lists[shopTab];
+  let body = "";
+  if(shopTab === "buy"){
+    const by = {}; L.forEach(g => { const k = (g.store || "").trim() || "Anywhere"; (by[k] = by[k] || []).push(g); });
+    const keys = Object.keys(by).sort((a,b) => a === "Anywhere" ? 1 : b === "Anywhere" ? -1 : a.localeCompare(b));
+    body = keys.map(k => `<div class="group-h">${esc(k)} · ${money(plannedOn(by[k]))}</div><div class="gifts">${by[k].sort((a,b)=>(a.orderBy||"9")<(b.orderBy||"9")?-1:1).map(g => giftRow(g, true)).join("")}</div>`).join("");
+  } else body = `<div class="gifts" style="margin-top:12px">${L.map(g => giftRow(g, true)).join("")}</div>`;
+  const hint = {buy:"Ideas you still need to buy, grouped by store.", coming:"Bought online and not here yet. Add an arrival date to see it here.", wrap:"Bought and in the house. Time for paper and tape!", stock:"Everything marked as a stocking stuffer.", done:"Wrapped or already given. Nice work, elf."}[shopTab];
+  app.innerHTML = `<div class="pt"><div class="row" style="margin-bottom:14px"><div class="spacer"><div class="sub">Sleigh List</div><h1>To-do lists</h1></div><button class="btn ghost sm" data-act="peek">${peeking ? "🙈" : "👀"}</button></div>
+    <div class="chips">${tabs.map(([k,l]) => `<button class="chip" aria-pressed="${shopTab===k}" data-act="shopTab" data-v="${k}">${l} ${lists[k].length}</button>`).join("")}</div>
+    <p class="sub" style="margin:4px 4px 0">${hint}</p>
+    ${L.length ? body : `<div class="card empty" style="margin-top:14px"><svg viewBox="0 0 130 132" style="width:120px;height:122px">${XMAS.santaFace(XMAS.PAL[S.theme])}</svg><p>${shopTab === "done" ? "Nothing wrapped yet — Santa believes in you." : "All clear here. Ho ho ho!"}</p></div>`}
+  </div>`;
+}
+function renderSettings(){
+  const n = S.gifts.filter(g => g.orderBy).length;
+  app.innerHTML = `<div class="pt stack"><div><div class="sub">Sleigh List</div><h1>Settings</h1></div>
+    ${installBanner()}
+    <div class="card stack">
+      <div><label class="lbl" for="sn">Your name</label><input class="input" id="sn" value="${esc(S.name)}" data-set="name"></div>
+      <div><label class="lbl" for="sb">Total budget</label><input class="input money" id="sb" inputmode="decimal" value="${S.budget||""}" placeholder="Leave empty to add up everyone's budgets" data-set="budget"></div>
+      <div><span class="lbl">Theme</span><div class="themes">
+        <button data-act="theme" data-v="night" aria-pressed="${S.theme==="night"}">${XMAS.scene("night",{id:"tn", h:300, snowman:false, gifts:false, noSleigh:true})}<span>Snowy night</span></button>
+        <button data-act="theme" data-v="story" aria-pressed="${S.theme==="story"}">${XMAS.scene("story",{id:"ts", h:300, snowman:false, gifts:false, noSleigh:true})}<span>Storybook</span></button>
+      </div></div>
+    </div>
+    <div class="list">
+      <button class="item" data-act="reminders"><span class="ic">⏰</span><span class="spacer">Add order-by dates to my calendar<small>${n ? n + " gift" + (n>1?"s have":" has") + " an order-by date" : "Set an order-by date on a gift first"}</small></span></button>
+      <button class="item" data-act="newSeason"><span class="ic">🎄</span><span class="spacer">Start next Christmas<small>Keeps your people, clears this year's gifts</small></span></button>
+      <button class="item" data-act="export"><span class="ic">💾</span><span class="spacer">Save a backup<small>Keep a copy of your list</small></span></button>
+      <button class="item" data-act="import"><span class="ic">📥</span><span class="spacer">Restore from a backup<small>Use this on a new phone</small></span></button>
+    </div>
+    <div class="list"><button class="item" data-act="reset" style="color:var(--red)"><span class="ic">🗑️</span><span class="spacer">Erase everything on this phone</span></button></div>
+    <p class="sub" style="text-align:center">Your list never leaves this phone. Made by GridNorthCo.</p>
+  </div>`;
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html){
+  $("#sheetBody").innerHTML = html;
+  const sc = $("#scrim"), sh = $("#sheet");
+  sc.hidden = sh.hidden = false; sh.scrollTop = 0;
+  requestAnimationFrame(() => { sc.classList.add("show"); sh.classList.add("show"); });
+}
+function closeSheet(){
+  const sc = $("#scrim"), sh = $("#sheet");
+  sc.classList.remove("show"); sh.classList.remove("show"); openPerson = null;
+  setTimeout(() => { sc.hidden = sh.hidden = true; }, 300);
+}
+function personSheet(p){
+  if(!p) return;
+  openPerson = p.id;
+  const gs = giftsOf(p), sp = spentOn(gs), b = +p.budget || 0;
+  openSheet(`<div class="stack">
+    <div class="row"><div class="av" style="width:56px;height:56px;font-size:30px">${p.emoji}</div><div class="spacer"><h2>${esc(p.name)}</h2><div class="sub money">${money(sp)} spent${b ? " of " + money(b) : ""}${plannedOn(gs) > sp ? " · " + money(plannedOn(gs)) + " planned" : ""}</div></div><button class="btn ghost sm" data-act="editPerson" data-id="${p.id}">Edit</button></div>
+    ${b ? `<div class="bar"><i style="width:${Math.min(100, sp/b*100)}%;background:${sp > b ? "var(--red)" : "var(--green)"}"></i></div>` : ""}
+    <div class="gifts">${gs.map(g => giftRow(g, false)).join("") || `<p class="sub">No gifts for ${esc(p.name)} yet.</p>`}</div>
+    <button class="btn block" data-act="newGift" data-id="${p.id}">+ Add a gift for ${esc(p.name)}</button>
+  </div>`);
+}
+let draft = null;
+function giftEditor(g, forPerson){
+  draft = g ? JSON.parse(JSON.stringify(g)) : {id:uid(), personId: forPerson || openPerson || (S.people[0] && S.people[0].id), title:"", price:"", status:"idea", store:"", link:"", orderBy:"", arrives:"", hidden:"", notes:"", stocking:false};
+  drawGift(!!g);
+}
+function drawGift(existing){
+  const d = draft;
+  openSheet(`<div class="stack">
+    <h2>${existing ? "Edit gift" : "New gift"}</h2>
+    <div><span class="lbl">For</span><div class="pick">${S.people.map(p => `<button aria-pressed="${d.personId===p.id}" data-act="gp" data-v="${p.id}">${p.emoji} ${esc(p.name)}</button>`).join("")}</div></div>
+    <div><label class="lbl" for="gt">Gift</label><input class="input" id="gt" maxlength="60" value="${esc(d.title)}" placeholder="Cozy slippers"></div>
+    <div class="two"><div><label class="lbl" for="gpr">Price</label><input class="input money" id="gpr" inputmode="decimal" value="${esc(d.price)}" placeholder="$"></div>
+      <div><label class="lbl" for="gs">Store</label><input class="input" id="gs" maxlength="30" value="${esc(d.store)}" placeholder="Target"></div></div>
+    <div><span class="lbl">Status</span><div class="seg">${STATUS.map(([k,l]) => `<button aria-pressed="${d.status===k}" data-act="gst" data-v="${k}">${l}</button>`).join("")}</div></div>
+    <div class="two"><div><label class="lbl" for="gob">Order by</label><input class="input" id="gob" type="date" value="${esc(d.orderBy)}"></div>
+      <div><label class="lbl" for="gar">Arrives</label><input class="input" id="gar" type="date" value="${esc(d.arrives)}"></div></div>
+    <div><label class="lbl" for="gh">Hiding spot</label><input class="input" id="gh" maxlength="40" value="${esc(d.hidden)}" placeholder="Top shelf, hall closet"></div>
+    <div><label class="lbl" for="gl">Link</label><input class="input" id="gl" type="url" value="${esc(d.link)}" placeholder="https://"></div>
+    ${d.link ? `<a class="sub" href="${esc(d.link)}" target="_blank" rel="noopener" style="color:var(--gold);font-weight:800">Open link ↗</a>` : ""}
+    <div><label class="lbl" for="gn">Notes</label><textarea id="gn" maxlength="300" placeholder="Size M, the blue one">${esc(d.notes)}</textarea></div>
+    <label class="toggle"><input type="checkbox" id="gstk" ${d.stocking ? "checked" : ""}> 🧦 Stocking stuffer</label>
+    <button class="btn block" data-act="saveGift">${existing ? "Save changes" : "Add gift"}</button>
+    ${existing ? `<button class="btn ghost block" data-act="delGift">Remove this gift</button>` : ""}
+  </div>`);
+}
+function readGift(){
+  const v = id => { const el = $("#"+id); return el ? el.value : undefined; };
+  if(!$("#gt")) return;
+  Object.assign(draft, {title:v("gt"), price:v("gpr").replace(/[^0-9.]/g,""), store:v("gs"), orderBy:v("gob"), arrives:v("gar"), hidden:v("gh"), link:v("gl").trim(), notes:v("gn"), stocking:$("#gstk").checked});
+}
+let pdraft = null;
+function personEditor(p){
+  pdraft = p ? JSON.parse(JSON.stringify(p)) : {id:uid(), name:"", emoji:"⭐", budget:""};
+  drawPerson(!!p);
+}
+function drawPerson(existing){
+  const d = pdraft;
+  openSheet(`<div class="stack">
+    <h2>${existing ? "Edit person" : "Add someone"}</h2>
+    <div><label class="lbl" for="pn">Name</label><input class="input" id="pn" maxlength="24" value="${esc(d.name)}" placeholder="Aunt Linda"></div>
+    <div><span class="lbl">Icon</span><div class="emojis">${EMOJIS.map(e => `<button aria-pressed="${d.emoji===e}" data-act="pe" data-v="${e}">${e}</button>`).join("")}</div></div>
+    <div><label class="lbl" for="pb">Budget for this person (optional)</label><input class="input money" id="pb" inputmode="decimal" value="${esc(d.budget)}" placeholder="$ e.g. 50"></div>
+    <button class="btn block" data-act="savePerson">${existing ? "Save" : "Add to my list"}</button>
+    ${existing ? `<button class="btn ghost block" data-act="delPerson">Remove ${esc(d.name)} and their gifts</button>` : ""}
+  </div>`);
+}
+function readPerson(){ const n = $("#pn"), b = $("#pb"); if(n) pdraft.name = n.value; if(b) pdraft.budget = b.value.replace(/[^0-9.]/g,""); }
+
+/* ---------- files ---------- */
+function download(name, text, type){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text],{type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function icsText(list){
+  const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//GridNorthCo//Sleigh List//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Sleigh List"];
+  const stamp = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z");
+  const e = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,");
+  list.forEach(g => { const d = fromKey(g.orderBy), n = new Date(d); n.setDate(n.getDate()+1); const p = person(g.personId);
+    L.push("BEGIN:VEVENT","UID:sleigh-"+g.id+"@gridnorthco","DTSTAMP:"+stamp,"DTSTART;VALUE=DATE:"+dkey(d).replace(/-/g,""),"DTEND;VALUE=DATE:"+dkey(n).replace(/-/g,""),
+      "SUMMARY:"+e("🎁 Order: "+g.title+(p?" ("+p.name+")":"")),"DESCRIPTION:"+e("Last day to order"+(g.store?" from "+g.store:"")),"TRANSP:TRANSPARENT",
+      "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+e("Order "+g.title),"TRIGGER:PT9H","END:VALARM","END:VEVENT"); });
+  L.push("END:VCALENDAR"); return L.join("\r\n") + "\r\n";
+}
+
+/* ---------- events ---------- */
+async function sha256(s){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join(""); }
+function setStatus(g, st){
+  const was = g.status; g.status = st; save();
+  if(st !== was && (st === "wrapped" || st === "given")){
+    const all = S.gifts.length && S.gifts.every(x => x.status === "wrapped" || x.status === "given");
+    if(all){ sleighRun(); sparkle(); setTimeout(() => toast("Everything's wrapped! 🎅"), 400); }
+    else if(st === "wrapped") sparkle();
+  }
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act],[data-tab]"); if(!b) return;
+  if(b.dataset.tab){ view = b.dataset.tab; closeSheetQuiet(); render(); scrollTo(0,0); return; }
+  const a = b.dataset.act, id = b.dataset.id, v = b.dataset.v;
+  switch(a){
+    case "unlock": {
+      const code = ($("#code").value || "").trim().toUpperCase().replace(/\s+/g,"");
+      let ok = false; try { ok = (await sha256(code)) === CODE_HASH; } catch(err){ ok = code === "SLEIGH-BELLS-26"; }
+      if(ok){ S.unlocked = true; save(); render(); scrollTo(0,0); } else $("#codeErr").textContent = "That code doesn't match. Check the Start Here PDF from your Etsy download.";
+      break; }
+    case "starter": { const i = +b.dataset.i; starterSel.has(i) ? starterSel.delete(i) : starterSel.add(i); const nm = $("#nm").value, bd = $("#bd").value; renderOnboard(); $("#nm").value = nm; $("#bd").value = bd; break; }
+    case "start": {
+      S.name = ($("#nm").value || "").trim().slice(0,24);
+      S.budget = +($("#bd").value || "").replace(/[^0-9.]/g,"") || 0;
+      [...starterSel].sort((x,y)=>x-y).forEach(i => { const [em,t] = STARTERS[i]; S.people.push({id:uid(), name:t, emoji:em, budget:""}); });
+      S.onboarded = true; save(); view = "home"; render(); scrollTo(0,0); setTimeout(sleighRun, 400); break; }
+    case "tab": view = v; render(); break;
+    case "peek": peeking = !peeking; render(); toast(peeking ? "Gift names hidden 🙈" : "Gift names visible"); break;
+    case "pipe": view = "shop"; shopTab = v === "idea" ? "buy" : v === "bought" ? "wrap" : "done"; render(); break;
+    case "openPerson": personSheet(person(id)); break;
+    case "newPerson": personEditor(null); break;
+    case "editPerson": personEditor(person(id)); break;
+    case "pe": readPerson(); pdraft.emoji = v; drawPerson(S.people.some(p => p.id === pdraft.id)); break;
+    case "savePerson": {
+      readPerson(); pdraft.name = pdraft.name.trim();
+      if(!pdraft.name){ $("#pn").focus(); toast("Add a name"); break; }
+      const i = S.people.findIndex(p => p.id === pdraft.id);
+      if(i >= 0) S.people[i] = pdraft; else S.people.push(pdraft);
+      save(); render(); personSheet(pdraft); toast(i >= 0 ? "Saved" : pdraft.name + " added"); break; }
+    case "delPerson": {
+      if(!confirmStep(b)) break;
+      S.people = S.people.filter(p => p.id !== pdraft.id); S.gifts = S.gifts.filter(g => g.personId !== pdraft.id); save(); closeSheet(); render(); toast("Removed"); break; }
+    case "newGift": if(!S.people.length){ personEditor(null); break; } giftEditor(null, id); break;
+    case "editGift": giftEditor(S.gifts.find(g => g.id === id)); break;
+    case "gp": readGift(); draft.personId = v; drawGift(S.gifts.some(g => g.id === draft.id)); break;
+    case "gst": readGift(); draft.status = v; drawGift(S.gifts.some(g => g.id === draft.id)); break;
+    case "saveGift": {
+      readGift(); draft.title = draft.title.trim();
+      if(!draft.title){ $("#gt").focus(); toast("Name the gift"); break; }
+      if(!draft.personId){ toast("Pick who it's for"); break; }
+      const i = S.gifts.findIndex(g => g.id === draft.id), old = i >= 0 ? S.gifts[i].status : "idea", st = draft.status;
+      draft.status = old;
+      if(i >= 0) S.gifts[i] = draft; else S.gifts.push(draft);
+      setStatus(draft, st);
+      const back = openPerson && person(draft.personId) ? draft.personId : null;
+      render(); if(back) personSheet(person(back)); else closeSheet();
+      toast(i >= 0 ? "Saved" : "Gift added 🎁"); break; }
+    case "delGift": {
+      if(!confirmStep(b)) break;
+      const pid = draft.personId; S.gifts = S.gifts.filter(g => g.id !== draft.id); save(); render();
+      if(openPerson) personSheet(person(pid)); else closeSheet(); toast("Gift removed"); break; }
+    case "cycle": {
+      const g = S.gifts.find(x => x.id === id); if(!g) break;
+      const order = STATUS.map(s => s[0]); const nx = order[(order.indexOf(g.status)+1) % order.length];
+      setStatus(g, nx); buzz();
+      const reopen = openPerson;
+      render(); if(reopen && !$("#sheet").hidden) personSheet(person(reopen));
+      const el = document.querySelector(`.st[data-id="${id}"]`); if(el) el.classList.add("pop");
+      break; }
+    case "shopTab": shopTab = v; render(); break;
+    case "theme": { const nm = $("#nm") && $("#nm").value, bd = $("#bd") && $("#bd").value; S.theme = v; applyTheme(); save(); render(); if(nm != null && $("#nm")){ $("#nm").value = nm; $("#bd").value = bd; } break; }
+    case "reminders": {
+      const list = S.gifts.filter(g => g.orderBy && g.status === "idea");
+      if(!list.length){ toast("Add an order-by date to a gift you still need to buy"); break; }
+      if(isIOS){
+        const clean = t => String(t).replace(/[;,#%]/g," ").trim().slice(0,40);
+        const recs = list.map(g => { const p = person(g.personId); const d = fromKey(g.orderBy); return "E," + clean("Order " + g.title + (p ? " for " + p.name : "")) + "," + d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate(); });
+        const url = "https://gridnorthco.github.io/calendar/#" + encodeURIComponent("GNC1;" + xmasDate().getFullYear() + ";" + recs.join(";"));
+        openSheet(`<div class="stack"><h2>Add order-by dates to your iPhone calendar</h2><ol class="steps"><li>Tap “Open calendar page”. It opens in Safari with your dates filled in.</li><li>Choose when to be reminded, then tap “Add to Apple Calendar”.</li><li>Tap “Add All”.</li></ol><p class="sub">Tip: kids around? Gift names show in your calendar. Edit them there if needed.</p><a class="btn block" href="${url}" target="_blank" rel="noopener" data-act="close">Open calendar page</a></div>`);
+        break;
+      }
+      download("sleigh-list-order-dates.ics", icsText(list), "text/calendar"); toast("Open the file to add the dates"); break; }
+    case "newSeason": openSheet(`<div class="stack"><h2>Start next Christmas?</h2><p class="sub">Your people and their budgets stay. All gifts from this year are cleared. Save a backup first if you'd like to keep this year's list.</p><button class="btn block" data-act="newSeasonYes">Start fresh</button><button class="btn ghost block" data-act="close">Not yet</button></div>`); break;
+    case "newSeasonYes": S.gifts = []; S.season = xmasDate().getFullYear(); save(); closeSheet(); view = "home"; render(); toast("A fresh list for a new Christmas 🎄"); break;
+    case "export": {
+      const txt = JSON.stringify(S, null, 1), name = "sleigh-list-backup-" + dkey(today()) + ".json";
+      try { const f = new File([txt], name, {type:"application/json"}); if(navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f], title:"Sleigh List backup"}); break; } } catch(err){ if(err && err.name === "AbortError") break; }
+      download(name, txt, "application/json"); toast("Backup saved"); break; }
+    case "import": $("#importFile").click(); break;
+    case "reset": openSheet(`<div class="stack"><h2>Erase everything?</h2><p class="sub">This removes all people and gifts from this phone. Save a backup first if you might want them back.</p><button class="btn block" data-act="resetYes">Erase everything</button><button class="btn ghost block" data-act="close">Keep my list</button></div>`); break;
+    case "resetYes": { const u = S.unlocked, th = S.theme; S = blank(); S.unlocked = u; S.theme = th; save(); closeSheet(); view = "home"; render(); break; }
+    case "close": closeSheet(); break;
+    case "install": if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; render(); } break;
+    case "install-ios": openSheet(`<div class="stack"><h2>Add Sleigh List to your Home Screen</h2><ol class="steps"><li>Tap the Share button <span aria-hidden="true">⬆️</span> at the bottom of Safari.</li><li>Scroll down and tap “Add to Home Screen”.</li><li>Tap “Add”, then open Sleigh List from your Home Screen.</li></ol><p class="sub">Tip: build your list after opening it from the Home Screen — the app keeps its own data, separate from Safari.</p><button class="btn block" data-act="close">Got it</button></div>`); break;
+  }
+});
+function confirmStep(b){ if(b.dataset.sure) return true; b.dataset.sure = "1"; b.textContent = "Tap again to confirm"; b.style.background = "var(--red)"; b.style.color = "#fff"; return false; }
+function closeSheetQuiet(){ const sh = $("#sheet"); if(!sh.hidden) closeSheet(); }
+$("#scrim").addEventListener("click", closeSheet);
+document.addEventListener("input", e => {
+  const t = e.target;
+  if(t.dataset.set === "name"){ S.name = t.value.slice(0,24); save(); }
+  if(t.dataset.set === "budget"){ S.budget = +t.value.replace(/[^0-9.]/g,"") || 0; save(); }
+});
+document.addEventListener("keydown", e => { if(e.key === "Escape" && !$("#sheet").hidden) closeSheet(); if(e.key === "Enter" && e.target.id === "code") document.querySelector('[data-act="unlock"]').click(); });
+$("#importFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try { const d = JSON.parse(await f.text()); if(!d || !Array.isArray(d.gifts) || !Array.isArray(d.people)) throw 0; S = Object.assign(blank(), d, {unlocked:true}); save(); applyTheme(); render(); toast("Backup restored"); }
+  catch(err){ toast("That file isn't a Sleigh List backup"); }
+  e.target.value = "";
+});
+document.addEventListener("visibilitychange", () => { if(document.hidden) cancelAnimationFrame(snowRAF); else if(view === "home" && S.unlocked && S.onboarded) render(); });
+if("scrollRestoration" in history) history.scrollRestoration = "manual";
+if("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+render();
+})();
+</script>
+</body>
+</html>
