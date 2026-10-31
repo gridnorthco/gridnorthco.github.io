@@ -546,6 +546,7 @@ function drawEditor(existing){
 function readDraftInputs(){ const n = $("#hn"), r = $("#hr"); if(n) draft.name = n.value; if(r) draft.remind = r.value; }
 
 /* ---------- calendar (.ics) ---------- */
+function remindDays(h){ return h.type === "days" ? h.days.slice().sort() : h.type === "weekly" ? (h.per >= 5 ? [1,2,3,4,5] : h.per === 4 ? [1,2,4,5] : h.per === 3 ? [1,3,5] : h.per === 2 ? [2,4] : [0]) : [0,1,2,3,4,5,6]; }
 function icsText(){
   const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//GridNorthCo//Bloom Habits//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:Bloom Habits"];
   const BY = ["SU","MO","TU","WE","TH","FR","SA"];
@@ -553,7 +554,7 @@ function icsText(){
   const escI = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,");
   for(const h of active().filter(x => x.remind)){
     const [hh,mm] = h.remind.split(":").map(Number);
-    const days = h.type === "days" ? h.days.slice().sort() : h.type === "weekly" ? (h.per >= 5 ? [1,2,3,4,5] : h.per === 4 ? [1,2,4,5] : h.per === 3 ? [1,3,5] : h.per === 2 ? [2,4] : [0]) : [0,1,2,3,4,5,6];
+    const days = remindDays(h);
     let st = today(); for(let i=0;i<7 && !days.includes(st.getDay());i++) st = addDays(st,1);
     const ymd = dkey(st).replace(/-/g,""), t0 = pad(hh)+pad(mm)+"00";
     const em = hh*60+mm+10, t1 = pad(Math.min(23,Math.floor(em/60)))+pad(em>=1440?59:em%60)+"00";
@@ -635,8 +636,19 @@ document.addEventListener("click", async e => {
     case "goal": { const k = b.dataset.k; S[k] = Math.max(1, Math.min(k==="waterGoal"?16:12, S[k] + +v)); save(); render(); break; }
     case "reminders": {
       if(!active().some(h => h.remind)){ toast("Open a habit and set a reminder time"); break; }
+      if(isIOS){
+        const clean = t => String(t).replace(/[;,#%]/g," ").trim().slice(0,40);
+        const recs = active().filter(h => h.remind).map(h => {
+          const days = remindDays(h); const mask = [0,1,2,3,4,5,6].map(i => days.includes(i) ? "1" : "0").join("");
+          const [hh,mm] = h.remind.split(":").map(Number); const t = today();
+          return "H," + clean(h.emoji + " " + h.name) + "," + hh + ":" + pad(mm) + "," + mask + "," + t.getFullYear() + "-" + (t.getMonth()+1) + "-" + t.getDate();
+        });
+        const url = "https://gridnorthco.github.io/calendar/#" + encodeURIComponent("GNC1;" + today().getFullYear() + ";" + recs.join(";"));
+        openSheet(`<div class="stack"><h2>Add reminders to your iPhone calendar</h2><ol class="steps"><li>Tap “Open calendar page”. It opens in Safari with your habits filled in.</li><li>Tap “Add to Apple Calendar”.</li><li>Tap “Add All”. Each habit now reminds you at its time.</li></ol><a class="btn accent block" href="${url}" target="_blank" rel="noopener" data-act="close">Open calendar page</a></div>`);
+        break;
+      }
       const ics = icsText();
-      if(isIOS) location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+      if(false) location.href = "";
       else { download("bloom-habit-reminders.ics", ics, "text/calendar"); toast("Open the file to add your reminders"); }
       break; }
     case "manage": openSheet(`<div class="stack"><h2>Manage habits</h2>${S.habits.length ? S.habits.map(h => `<div class="habit ${h.archived?"off":""}"><div class="emo" style="background:${tint(h.color,.28)}">${h.emoji}</div><div class="txt"><div class="name">${esc(h.name)}</div><div class="meta">${h.archived?"Paused":schedText(h)}</div></div>${h.archived?`<button class="btn ghost" style="min-height:40px" data-act="unarchive" data-id="${h.id}">Resume</button>`:`<button class="btn ghost" style="min-height:40px" data-act="edit" data-id="${h.id}">Edit</button>`}</div>`).join("") : `<p class="sub">No habits yet.</p>`}<button class="btn accent block" data-act="new">+ Add a habit</button></div>`); break;
