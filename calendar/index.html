@@ -57,15 +57,15 @@
 <header>
   <div class="wrap">
     <div class="brand">GRIDNORTHCO</div>
-    <h1>Add your bills to your calendar</h1>
-    <p>Get a reminder before every bill, debt payment and payday — on iPhone, Mac, Outlook or Google Calendar.</p>
+    <h1 id="ttl">Add your reminders to your calendar</h1>
+    <p id="lede">Bills, paydays, family gatherings, order-by dates or habits — get a reminder on iPhone, Android, Mac, Outlook or Google Calendar.</p>
   </div>
 </header>
 <main class="wrap">
   <div class="card">
     <div class="step"><div class="num">1</div><div style="flex:1">
       <h2>Copy your calendar code</h2>
-      <p class="hint">In your GridNorthCo planner, find the <b>Calendar code</b> cell (Bills tab in the Paycheck planner, My Debts tab in the Debt Payoff planner, Dates &amp; Reminders tab in the Christmas planner, Habits tab in the Habit Tracker) and copy it.</p>
+      <p class="hint">In your GridNorthCo planner, find the <b>Calendar code</b> cell (Bills tab in the Paycheck planner, My Debts tab in the Debt Payoff planner, Dates &amp; Reminders tab in the Christmas planner, Habits tab in the Habit Tracker, This Year tab in the Holiday Rotation Planner) and copy it. Using the Bloom or Sleigh List app? The app fills it in for you.</p>
     </div></div>
   </div>
   <div class="card">
@@ -252,6 +252,11 @@
       $("parseMsg").textContent="✔ Found "+bits.join(", ").replace(/, ([^,]*)$/," and $1")+".";
       $("optBills").hidden=!parsed.bills.length; $("optPay").hidden=!parsed.pay; $("optEv").hidden=!parsed.events.length; $("optHab").hidden=!parsed.habits.length; const onlyHab=parsed.habits.length&&!parsed.bills.length&&!parsed.pay&&!parsed.events.length; const ao=$("alarm").options; ao[0].text=onlyHab?"At the habit's time":"Day before, 9:00 AM"; ao[1].text=onlyHab?"At the habit's time":"2 days before, 9:00 AM"; ao[2].text=onlyHab?"At the habit's time":"Same day, 9:00 AM"; for(const o of [ao[1],ao[2]]) o.hidden=!!onlyHab; if(onlyHab) $("repeat").value="forever";
       $("repeatRow").hidden=!(parsed.bills.some(b=>!b.to)||parsed.pay||parsed.habits.length);
+      const T=$("ttl"),L=$("lede"),hb=parsed.habits.length,bl=parsed.bills.length||parsed.pay,ev=parsed.events.length;
+      if(hb&&!bl&&!ev){T.textContent="Add your habits to your calendar";L.textContent="A reminder at each habit's time, on the days it's due — on iPhone, Android, Mac, Outlook or Google Calendar.";}
+      else if(ev&&!bl&&!hb){T.textContent="Add your dates to your calendar";L.textContent="A reminder before each date — on iPhone, Android, Mac, Outlook or Google Calendar.";}
+      else if(bl&&!ev&&!hb){T.textContent="Add your bills to your calendar";L.textContent="Get a reminder before every bill, debt payment and payday — on iPhone, Android, Mac, Outlook or Google Calendar.";}
+      else {T.textContent="Add your reminders to your calendar";}
       $("optsCard").hidden=$("addCard").hidden=false; render();
     }catch(e){
       parsed=null; $("parseMsg").className="msg err"; $("parseMsg").textContent=e.message; $("optsCard").hidden=$("addCard").hidden=true;
